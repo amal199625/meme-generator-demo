@@ -1,0 +1,50 @@
+<div class="meme-editor">
+
+  <input type="file" (change)="onImageSelected($event)" accept="image/*" />
+  
+  <!-- <div class="inputs">
+    <input type="text" [(ngModel)]="textTop" placeholder="Texte du haut" (input)="drawMeme()" />
+    <input type="text" [(ngModel)]="textBottom" placeholder="Texte du bas" (input)="drawMeme()" />
+  </div> -->
+<div class="inputs">
+    <input 
+      type="text" 
+      [(ngModel)]="text" 
+      placeholder="Texte du mème" 
+      (input)="drawMeme()" />
+  </div>
+  <canvas #memeCanvas  
+    (mousedown)="startDragging($event)"
+    (mousemove)="dragText($event)"
+    (mouseup)="stopDragging()"
+    width="500" height="500"></canvas>
+
+  <div class="actions">
+    <button (click)="downloadMeme()" [disabled]="!previewUrl">⬇️ Télécharger</button>
+    <button (click)="saveMeme()" [disabled]="!previewUrl || loading">
+      {{ loading ? '⏳ Enregistrement...' : '💾 Enregistrer sur le serveur' }}
+    </button>
+      <!-- <button (click)="shareMeme()" [disabled]="!previewUrl">📤 Partager</button> -->
+        <button (click)="toggleShare()">📤 Partager</button>
+
+<!-- <div class="share-buttons">
+  <button (click)="shareOnFacebook()">📘 Facebook</button>
+  <button (click)="shareOnTwitter()">🐦 Twitter</button>
+  <button (click)="shareOnWhatsApp()">💬 WhatsApp</button>
+</div> -->
+
+
+
+
+<!-- Popup de partage -->
+<div class="share-popup" *ngIf="showSharePopup">
+  <p>Partager sur :</p>
+  <div class="share-icons">
+    <button (click)="shareOnFacebook()">📘</button>
+    <button (click)="shareOnTwitter()">🐦</button>
+    <button (click)="shareOnWhatsApp()">💬</button>
+  </div>
+  <button class="close-btn" (click)="toggleShare()">Fermer ✖️</button>
+</div>
+  </div>
+</div>

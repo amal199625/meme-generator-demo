@@ -1,0 +1,18 @@
+
+
+<p-carousel 
+  [value]="memes" 
+  [numVisible]="5" 
+  [numScroll]="1" 
+  [circular]="true" 
+  [autoplayInterval]="3000" 
+  [responsiveOptions]="responsiveOptions" 
+  [showIndicators]="true" 
+  [showNavigators]="true">
+  
+  <ng-template pTemplate="item" let-meme>
+    <div class="meme-slide" (click)="selectMeme(meme)">
+      <img [src]="meme" alt="meme" />
+    </div>
+  </ng-template>
+</p-carousel>

@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "meme-generator-project-de362",
+    "test": "meme-generator-demo"
+  },
+  "targets": {},
+  "etags": {}
+}
