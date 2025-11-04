@@ -11,7 +11,7 @@ private selectedImageSource = new BehaviorSubject<string | null>(null);
   selectedImage$ = this.selectedImageSource.asObservable();
   constructor(private http: HttpClient) {}
 
-   private apiUrl = 'http://localhost:3000';
+   private apiUrl = 'https://meme-generator-backend-un0c.onrender.com';
 
 
 
