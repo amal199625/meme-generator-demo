@@ -11,14 +11,20 @@ import { ButtonModule } from 'primeng/button';
   templateUrl: './gallery.component.html',
 styleUrls: ['./gallery.component.css']})
 export class GalleryComponent {
- @Input() refresh!: boolean;
-@Output() memeSelected = new EventEmitter<string>(); //  émet l’URL du mème sélectionné
+  // Triggered by the parent to refresh the gallery
+  @Input() refresh!: boolean;
 
+  // Emits the selected meme URL when a meme is clicked
+  @Output() memeSelected = new EventEmitter<string>();
+
+  // List of memes displayed in the gallery
   memes: string[] = [];
+
+  // Loading state (used to show a spinner or disable UI)
   loading = false;
-////currentIndex = 0;
-//slideWidth = 210; // largeur d'une image + margin
- responsiveOptions = [
+
+  // Carousel responsive settings
+  responsiveOptions = [
     {
       breakpoint: '1024px',
       numVisible: 5,
@@ -36,15 +42,19 @@ export class GalleryComponent {
     }
   ];
 
-
   constructor(private memeService: MemeService) {}
-ngOnInit(){
-  this.loadMemes()
-}
+
+  // Load memes when the component is initialized
+  ngOnInit() {
+    this.loadMemes();
+  }
+
+  // Reload memes when the parent toggles "refresh"
   ngOnChanges(changes: SimpleChanges) {
     if (changes['refresh'] && this.refresh) this.loadMemes();
   }
 
+  // Fetch all memes from the API
   loadMemes() {
     this.loading = true;
     this.memeService.getAllMemes().subscribe({
@@ -58,24 +68,11 @@ ngOnInit(){
       }
     });
   }
-   selectMeme(memeUrl: string) {
-    console.log('selecteeed imaage ', memeUrl)
-       this.memeService.selectImage(memeUrl);
 
+  // Handle meme selection and notify other components
+  selectMeme(memeUrl: string) {
+    console.log('Selected image:', memeUrl);
+    this.memeService.selectImage(memeUrl);
   }
-//   getTransform() {
-//   return `translateX(-${this.currentIndex * this.slideWidth}px)`;
-// }
-
-// prevSlide() {
-//   if (this.currentIndex > 0) {
-//     this.currentIndex--;
-//   }
-// }
-
-// nextSlide() {
-//   if (this.currentIndex < this.memes.length - Math.floor(600 / this.slideWidth)) {
-//     this.currentIndex++;
-//   }
-// }
 }
+

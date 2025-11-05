@@ -1,136 +1,138 @@
-import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
 import { MemeService } from '../services/meme.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faFacebookF, faTwitter, faWhatsapp, faTelegram } from '@fortawesome/free-brands-svg-icons';
+import { faTimes, faTrash, faUpload, faDownload, faShareAlt } from '@fortawesome/free-solid-svg-icons';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-meme-editor',
-  imports: [CommonModule, FormsModule],
+  standalone: true,
+  imports: [CommonModule, FormsModule, FontAwesomeModule],
   templateUrl: './meme-editor.component.html',
-  styleUrls: ['./meme-editor.component.css'] // corrigé: styleUrls au pluriel
+  styleUrls: ['./meme-editor.component.css']
 })
 export class MemeEditorComponent {
+  // Canvas reference for drawing the meme
   @ViewChild('memeCanvas', { static: false }) memeCanvas!: ElementRef<HTMLCanvasElement>;
-  @Output() memeSaved = new EventEmitter<void>();
-  selectedImage: string | null = null;
-  text: string = ''; // ✅ Un seul texte
 
-  // textTop = '';
-  // textBottom = '';
+  // Event emitted when a meme is saved
+  @Output() memeSaved = new EventEmitter<void>();
+
+  // Meme data and state
+  selectedImage: string | null = null;
+  text: string = '';
   imageFile: File | null = null;
   previewUrl: string | null = null;
   loading = false;
+  showSharePopup = false;
+  lastSavedUrl: string | null = null;
 
-  // Taille fixe du canvas
+  // Canvas and text position
   canvasWidth = 500;
   canvasHeight = 500;
-
-  // Position du texte
   textX = this.canvasWidth / 2;
   textY = this.canvasHeight / 2;
-
-  // Dragging
   isDragging = false;
   dragOffsetX = 0;
   dragOffsetY = 0;
 
+  private objectUrl: string | null = null;
 
-  showSharePopup = false;
-lastSavedUrl: string | null = null; // URL du dernier mème uploadé
+  // FontAwesome icons
+  faFacebookF = faFacebookF;
+  faTwitter = faTwitter;
+  faWhatsapp = faWhatsapp;
+  faTelegram = faTelegram;
+  faTimes = faTimes;
+  faTrash = faTrash;
+  faUpload = faUpload;
+  faDownload = faDownload;
+  faShareAlt = faShareAlt;
 
-toggleShare() {
-  this.showSharePopup = !this.showSharePopup;
-}
   constructor(private memeService: MemeService) {}
 
-
-
- ngOnInit() {
+  // Load selected image and draw it on the canvas
+  ngOnInit() {
     this.memeService.selectedImage$.subscribe(image => {
-      console.log('my imaagee ====>>>>>>>>>>>>>>>>>>>>',image)
       this.selectedImage = image;
-      this.previewUrl = image; // ✅ Utilisée dans drawMeme()
-      this.drawMeme(); // ✅ Affiche automatiquement sur le canvas
+      this.previewUrl = image;
+      this.lastSavedUrl = image;
+
+      this.drawMeme();
     });
   }
-    onImageSelected(event: any) {
-    this.imageFile = event.target.files[0];
-    if (!this.imageFile) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.previewUrl = reader.result as string;
-      this.drawMeme();
-    };
-    reader.readAsDataURL(this.imageFile);
+  // Upload a new image from the device
+  onImageSelected(event: Event) {
+    const fileInput = event.target as HTMLInputElement;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+
+    this.objectUrl = URL.createObjectURL(file);
+    this.previewUrl = this.objectUrl;
+
+    this.imageFile = file;
+    this.drawMeme();
   }
 
-  // drawMeme() {
-  //   if (!this.previewUrl || !this.memeCanvas) return;
+  // Remove the current image and reset the editor
+  removeImage() {
+    if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
 
-  //   const canvas = this.memeCanvas.nativeElement;
-  //   const ctx = canvas.getContext('2d');
-  //   if (!ctx) return;
+    this.previewUrl = null;
+    this.selectedImage = null;
+    this.imageFile = null;
+    this.text = '';
+    this.lastSavedUrl = null;
+    this.isDragging = false;
+    this.textX = this.canvasWidth / 2;
+    this.textY = this.canvasHeight / 2;
 
-  //   const image = new Image();
-  //   image.crossOrigin = 'anonymous';
-  //   image.src = this.previewUrl;
-  //   image.onload = () => {
-  //     // FIX: Taille fixe du canvas
-  //     canvas.width = this.canvasWidth;
-  //     canvas.height = this.canvasHeight;
+    const ctx = this.memeCanvas?.nativeElement.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      ctx.fillStyle = '#f4f4f4';
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+    }
+  }
 
-  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Draw image and text on canvas
+  async drawMeme() {
+    if (!this.previewUrl || !this.memeCanvas) return;
 
-  //     // Dessiner l'image en remplissant tout le canvas
-  //     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const canvas = this.memeCanvas.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  //     // Texte
-  //     ctx.font = '40px Impact';
-  //     ctx.fillStyle = 'white';
-  //     ctx.strokeStyle = 'black';
-  //     ctx.lineWidth = 3;
-  //     ctx.textAlign = 'center';
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.src = this.previewUrl;
 
-  //     ctx.fillText(this.textTop.toUpperCase(), canvas.width / 2, 50);
-  //     ctx.strokeText(this.textTop.toUpperCase(), canvas.width / 2, 50);
+    image.onload = () => {
+      canvas.width = this.canvasWidth;
+      canvas.height = this.canvasHeight;
 
-  //     ctx.fillText(this.textBottom.toUpperCase(), canvas.width / 2, canvas.height - 20);
-  //     ctx.strokeText(this.textBottom.toUpperCase(), canvas.width / 2, canvas.height - 20);
-  //   };
-  // }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
+      ctx.font = '40px Impact';
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'black';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
 
- drawMeme() {
-  if (!this.previewUrl || !this.memeCanvas) return;
+      const text = this.text?.toUpperCase() || '';
+      ctx.fillText(text, this.textX, this.textY);
+      ctx.strokeText(text, this.textX, this.textY);
+    };
+  }
 
-  const canvas = this.memeCanvas.nativeElement;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  const image = new Image();
-  image.crossOrigin = 'anonymous';
-  image.src = this.previewUrl;
-
-  image.onload = () => {
-    canvas.width = this.canvasWidth;
-    canvas.height = this.canvasHeight;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-    // Texte à la position dynamique
-    ctx.font = '40px Impact';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 3;
-    ctx.textAlign = 'center';
-
-    ctx.fillText(this.text.toUpperCase(), this.textX, this.textY);
-    ctx.strokeText(this.text.toUpperCase(), this.textX, this.textY);
-  };
-}
-
+  // Download the meme as a PNG image
   downloadMeme() {
     if (!this.memeCanvas) return;
     const link = document.createElement('a');
@@ -139,10 +141,13 @@ toggleShare() {
     link.click();
   }
 
+  // Save the meme to the server
   async saveMeme() {
     if (!this.memeCanvas) return;
 
-    const blob: Blob | null = await new Promise(resolve => this.memeCanvas.nativeElement.toBlob(resolve, 'image/png'));
+    const blob: Blob | null = await new Promise(resolve =>
+      this.memeCanvas.nativeElement.toBlob(resolve, 'image/png')
+    );
     if (!blob) return;
 
     const file = new File([blob], 'meme.png', { type: 'image/png' });
@@ -151,33 +156,29 @@ toggleShare() {
     this.memeService.uploadMeme(file).subscribe({
       next: (res: any) => {
         this.loading = false;
-              this.lastSavedUrl = res.url; // ✅ on garde l’URL pour le partage
-
-        alert('✅ Mème enregistré avec succès !');
-        this.memeSaved.emit(); // rafraîchit la galerie
+        this.lastSavedUrl = res.url;
+        this.showSharePopup = true;
+        this.memeSaved.emit();
       },
-      error: err => {
-        console.error(err);
+      error: () => {
         this.loading = false;
-        alert('❌ Erreur lors de l’enregistrement du mème.');
       }
     });
   }
 
-   /*** 🖱️ GESTION DU DRAG ***/
+  // Handle drag and drop for moving text
   startDragging(event: MouseEvent) {
     const canvas = this.memeCanvas.nativeElement;
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
     ctx.font = '40px Impact';
     const textWidth = ctx.measureText(this.text).width;
     const textHeight = 40;
 
-    // Vérifie si le clic est sur le texte
     if (
       mouseX >= this.textX - textWidth / 2 &&
       mouseX <= this.textX + textWidth / 2 &&
@@ -192,84 +193,60 @@ toggleShare() {
 
   dragText(event: MouseEvent) {
     if (!this.isDragging) return;
-
     const canvas = this.memeCanvas.nativeElement;
     const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
 
-    this.textX = mouseX - this.dragOffsetX;
-    this.textY = mouseY - this.dragOffsetY;
-    this.drawMeme();
+    this.textX = event.clientX - rect.left - this.dragOffsetX;
+    this.textY = event.clientY - rect.top - this.dragOffsetY;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.src = this.previewUrl!;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    this.drawText(ctx);
+  }
+
+  drawText(ctx: CanvasRenderingContext2D) {
+    ctx.font = '40px Impact';
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 4;
+    ctx.fillText(this.text, this.textX, this.textY);
+    ctx.strokeText(this.text, this.textX, this.textY);
   }
 
   stopDragging() {
     this.isDragging = false;
   }
 
-async shareMeme() {
-  const canvas = this.memeCanvas.nativeElement;
-
-  const blob: Blob | null = await new Promise(resolve =>
-    canvas.toBlob(resolve, 'image/png')
-  );
-
-  if (!blob) return;
-
-  const file = new File([blob], 'meme.png', { type: 'image/png' });
-
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({
-        title: 'Mon super mème 😄',
-        text: 'Regarde ce mème que j’ai créé !',
-        files: [file],
-      });
-    } catch (err) {
-      console.log('Partage annulé ou erreur :', err);
-    }
-  } else {
-    alert("❌ Le partage n'est pas supporté sur ce navigateur.");
+  // Toggle share popup
+  toggleShare() {
+    this.showSharePopup = !this.showSharePopup;
   }
-}
 
-// shareOnFacebook() {
-//   if (!this.selectedImage) return alert("Sauvegarde d'abord ton mème avant de partager !");
-//   const url = encodeURIComponent(this.selectedImage);
-//   console.log('img urlll =========>>>>>>>>>>>', url)
-//   window.open(`https://www.facebook.com/sharer/sharer.php?u=${this.selectedImage}`, '_blank');
-// }
-shareOnFacebook() {
-    if (!this.selectedImage) {
-    alert("⚠️ Aucune image à partager !");
-    return;
-  }
-  if (navigator.share) {
-    navigator.share({
-      title: 'Mon super mème 😂',
-      text: 'Regarde ce que j’ai créé !',
-      url: this.selectedImage,
-    }).catch(err => console.log('Erreur de partage', err));
-  } else {
+  // Share meme on social networks
+  shareOnFacebook() {
+    console.log('the last url=====>',this.lastSavedUrl)
+    if (!this.lastSavedUrl) return;
     window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.selectedImage)}`,
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.lastSavedUrl)}`,
       '_blank'
     );
   }
+
+  shareOnTwitter() {
+    const text = encodeURIComponent('Check out this meme I created 😄');
+    const url = encodeURIComponent(this.lastSavedUrl || '');
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+  }
+
+  shareOnWhatsApp() {
+    const text = encodeURIComponent('Check out this meme I created 😄 ' + (this.lastSavedUrl || ''));
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
 }
 
-shareOnTwitter() {
-  const text = encodeURIComponent('Regarde ce mème que j’ai créé 😄');
-  const url = encodeURIComponent(this.previewUrl || '');
-  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-}
-
-shareOnWhatsApp() {
-  const text = encodeURIComponent('Regarde ce mème que j’ai créé 😄 ' + (this.previewUrl || ''));
-  window.open(`https://wa.me/?text=${text}`, '_blank');
-}
-
-
-
-
-}

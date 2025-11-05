@@ -1,0 +1,14 @@
+{
+  "/file": {
+    "target": "https://meme-generator-backend-un0c.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/uploads": {
+    "target": "https://meme-generator-backend-un0c.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
